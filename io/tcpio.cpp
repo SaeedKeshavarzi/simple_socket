@@ -119,6 +119,13 @@ int tcp_server_t::recv(char* packet, const int size)
 	do
 	{
 		const int&& ret = ::recv(the_socket, offset, to_receive, 0);
+		if (ret == 0) // connection closed
+		{
+			close();
+
+			return -1;
+		}
+
 		if (ret == SOCKET_ERROR)
 		{
 			int error_code = get_last_error();
@@ -137,6 +144,13 @@ int tcp_server_t::recv(char* packet, const int size)
 int tcp_server_t::recv_any(char* packet, const int capacity, int* recvd_size)
 {
 	const int&& ret = ::recv(the_socket, packet, capacity, 0);
+	if (ret == 0) // connection closed
+	{
+		close();
+
+		return -1;
+	}
+
 	if (ret == SOCKET_ERROR)
 	{
 		int error_code = get_last_error();
@@ -248,6 +262,13 @@ int tcp_client_t::recv(char* packet, const int size)
 	do
 	{
 		const int&& ret = ::recv(the_socket, offset, to_receive, 0);
+		if (ret == 0) // connection closed
+		{
+			close();
+
+			return -1;
+		}
+
 		if (ret == SOCKET_ERROR)
 		{
 			int error_code = get_last_error();
@@ -266,6 +287,13 @@ int tcp_client_t::recv(char* packet, const int size)
 int tcp_client_t::recv_any(char* packet, const int capacity, int* recvd_size)
 {
 	const int&& ret = ::recv(the_socket, packet, capacity, 0);
+	if (ret == 0) // connection closed
+	{
+		close();
+
+		return -1;
+	}
+
 	if (ret == SOCKET_ERROR)
 	{
 		int error_code = get_last_error();
