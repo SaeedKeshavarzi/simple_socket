@@ -38,3 +38,6 @@
 /ipch/
 *.db
 *.opendb
+
+# Qt
+*.pro.user
