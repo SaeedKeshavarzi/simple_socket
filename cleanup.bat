@@ -14,4 +14,6 @@ IF EXIST ".\ipch" (
     rmdir ".\ipch" /s /q
 )
 
+del *.pro.user
+
 del *.db
