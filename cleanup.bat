@@ -14,6 +14,16 @@ IF EXIST ".\ipch" (
     rmdir ".\ipch" /s /q
 )
 
+IF EXIST ".\x64" (
+    rmdir ".\x64" /s /q
+)
+
+IF EXIST ".\Debug" (
+    rmdir ".\Debug" /s /q
+)
+
 del *.pro.user
+
+del *.vcxproj.user
 
 del *.db
