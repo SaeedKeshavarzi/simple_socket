@@ -17,14 +17,10 @@ DEFINES += QT_DEPRECATED_WARNINGS
 PRECOMPILED_HEADER = pch.h
 
 HEADERS += \
-    pch.h \
-    io/tcpio.h \
-    io/udpio.h \
+    io/sockio.h \
     pch.h
 
-SOURCES += main.cpp \
-    pch.cpp \
-    io/tcpio.cpp \
-    io/udpio.cpp \
+SOURCES += \
+    io/sockio.cpp \
     main.cpp \
     pch.cpp

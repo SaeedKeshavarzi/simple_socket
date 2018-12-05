@@ -27,10 +27,7 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="io\tcpio.cpp">
-      <Filter>Source Files\io</Filter>
-    </ClCompile>
-    <ClCompile Include="io\udpio.cpp">
+    <ClCompile Include="io\sockio.cpp">
       <Filter>Source Files\io</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,10 +35,7 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="io\tcpio.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="io\udpio.h">
+    <ClInclude Include="io\sockio.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
   </ItemGroup>

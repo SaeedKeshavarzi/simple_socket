@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "io/tcpio.h"
+#include "io/sockio.h"
 
 #define PACKET_LEN (1500)
 
@@ -31,19 +31,27 @@ int main()
 void rx_server()
 {
 	tcp_server_t tcp_server;
+	socket_t socket;
 	char packet[PACKET_LEN];
 	int ret;
 
-	ret = tcp_server.wait_for_client("192.168.1.102", 7121, "192.168.1.102", 7171);
+	ret = tcp_server.create("192.168.0.10", 7121);
 	if (ret != 0)
 	{
-		printf("wait_for_client failed. error code: %d \n", ret);
+		printf("create server failed. error code: %d \n", ret);
+		return;
+	}
+
+	ret = tcp_server.listen(socket);
+	if (ret != 0)
+	{
+		printf("listen failed. error code: %d \n", ret);
 		return;
 	}
 
 	while (keep_recv)
 	{
-		ret = tcp_server.recv(packet, PACKET_LEN);
+		ret = socket.recv(packet, PACKET_LEN);
 		if (ret != 0)
 		{
 			printf("recv failed. error code: %d \n", ret);
@@ -54,18 +62,21 @@ void rx_server()
 	}
 
 	keep_send = false;
+
+	socket.close();
+	tcp_server.close();
 }
 
 void tx_client()
 {
-	tcp_client_t tcp_client;
+	socket_t tcp_client;
 	char packet[PACKET_LEN];
 	int ret;
 
-	ret = tcp_client.connect_to_server("192.168.1.102", 7171, "192.168.1.102", 7121);
+	ret = tcp_client.connect("192.168.0.10", 7171, "192.168.0.10", 7121, ip_protocol_t::tcp);
 	if (ret != 0)
 	{
-		printf("connect_to_server failed. error code: %d \n", ret);
+		printf("connect failed. error code: %d \n", ret);
 		return;
 	}
 
@@ -81,4 +92,6 @@ void tx_client()
 		printf("send OK. \n");
 		std::this_thread::sleep_for(std::chrono::milliseconds(450));
 	}
+
+	tcp_client.close();
 }
