@@ -4,11 +4,11 @@
 #ifdef __linux__
 #	define ADDRESS_LEN_T unsigned int
 #	define get_last_error() errno
-#	define close_socket(socket) ::close(socket)
+#	define close_socket(socket_id) ::close(socket_id)
 #else
 #	define ADDRESS_LEN_T int
 #	define get_last_error() WSAGetLastError()
-#	define close_socket(socket) ::closesocket(socket)
+#	define close_socket(socket_id) ::closesocket(socket_id)
 
 struct winsock_initializer_t
 {
@@ -33,12 +33,13 @@ public:
 
 #endif
 
-int socket_t::connect(const std::string & mine_ip, const int mine_port, const std::string & pair_ip, const int pair_port, const ip_protocol_t protocol)
+int socket_t::connect(const std::string & mine_ip, const uint16_t mine_port, const std::string & pair_ip, const uint16_t pair_port, const ip_protocol_t protocol)
 {
 	assert(!pair_ip.empty());
+	assert(pair_port > 0);
 
 	//Create a socket
-	if ((socket = ::socket(AF_INET, protocol == ip_protocol_t::tcp ? SOCK_STREAM : SOCK_DGRAM, (int)protocol)) == INVALID_SOCKET)
+	if ((socket_id = ::socket(AF_INET, protocol == ip_protocol_t::tcp ? SOCK_STREAM : SOCK_DGRAM, (int)protocol)) == INVALID_SOCKET)
 	{
 		int error_code = get_last_error();
 
@@ -51,7 +52,7 @@ int socket_t::connect(const std::string & mine_ip, const int mine_port, const st
 	mine_address.sin_port = htons(mine_port);
 
 	//Bind
-	if (bind(socket, (sockaddr*)&mine_address, sizeof(mine_address)) == SOCKET_ERROR)
+	if (bind(socket_id, (sockaddr*)&mine_address, sizeof(mine_address)) == SOCKET_ERROR)
 	{
 		int error_code = get_last_error();
 		close();
@@ -65,7 +66,37 @@ int socket_t::connect(const std::string & mine_ip, const int mine_port, const st
 	pair_address.sin_port = htons(pair_port);
 
 	//connect
-	if (::connect(socket, (sockaddr*)&pair_address, sizeof(pair_address)) == SOCKET_ERROR)
+	if (::connect(socket_id, (sockaddr*)&pair_address, sizeof(pair_address)) == SOCKET_ERROR)
+	{
+		int error_code = get_last_error();
+		close();
+
+		return error_code;
+	}
+
+	return 0;
+}
+
+int socket_t::connect(const std::string & pair_ip, const uint16_t pair_port, const ip_protocol_t protocol)
+{
+	assert(!pair_ip.empty());
+	assert(pair_port > 0);
+
+	//Create a socket
+	if ((socket_id = ::socket(AF_INET, protocol == ip_protocol_t::tcp ? SOCK_STREAM : SOCK_DGRAM, (int)protocol)) == INVALID_SOCKET)
+	{
+		int error_code = get_last_error();
+
+		return error_code;
+	}
+
+	//Prepare the sockaddr_in structure
+	pair_address.sin_family = AF_INET;
+	pair_address.sin_addr.s_addr = inet_addr(pair_ip.c_str());
+	pair_address.sin_port = htons(pair_port);
+
+	//connect
+	if (::connect(socket_id, (sockaddr*)&pair_address, sizeof(pair_address)) == SOCKET_ERROR)
 	{
 		int error_code = get_last_error();
 		close();
@@ -83,7 +114,7 @@ int socket_t::send(const char * packet, const int size)
 
 	do
 	{
-		const int && ret = ::send(socket, offset, to_send, 0);
+		const int && ret = ::send(socket_id, offset, to_send, 0);
 		if (ret == SOCKET_ERROR)
 		{
 			int error_code = get_last_error();
@@ -106,7 +137,7 @@ int socket_t::recv(char * packet, const int size)
 
 	do
 	{
-		const int && ret = ::recv(socket, offset, to_receive, 0);
+		const int && ret = ::recv(socket_id, offset, to_receive, 0);
 		if (ret == 0) // connection closed
 		{
 			close();
@@ -131,7 +162,7 @@ int socket_t::recv(char * packet, const int size)
 
 int socket_t::recv_any(char * packet, const int capacity, int * recvd_size)
 {
-	const int && ret = ::recv(socket, packet, capacity, 0);
+	const int && ret = ::recv(socket_id, packet, capacity, 0);
 	if (ret == 0) // connection closed
 	{
 		close();
@@ -155,9 +186,45 @@ int socket_t::recv_any(char * packet, const int capacity, int * recvd_size)
 	return 0;
 }
 
+std::string socket_t::mine_ip()
+{
+	sockaddr_in address;
+	ADDRESS_LEN_T address_len = sizeof(address);
+
+	getsockname(socket_id, (sockaddr*)&address, &address_len);
+	return std::string(inet_ntoa(address.sin_addr));
+}
+
+uint16_t socket_t::mine_port()
+{
+	sockaddr_in address;
+	ADDRESS_LEN_T address_len = sizeof(address);
+
+	getsockname(socket_id, (sockaddr*)&address, &address_len);
+	return htons(address.sin_port);
+}
+
+std::string socket_t::pair_ip()
+{
+	sockaddr_in address;
+	ADDRESS_LEN_T address_len = sizeof(address);
+
+	getpeername(socket_id, (sockaddr*)&address, &address_len);
+	return std::string(inet_ntoa(address.sin_addr));
+}
+
+uint16_t socket_t::pair_port()
+{
+	sockaddr_in address;
+	ADDRESS_LEN_T address_len = sizeof(address);
+
+	getpeername(socket_id, (sockaddr*)&address, &address_len);
+	return htons(address.sin_port);
+}
+
 int socket_t::close()
 {
-	close_socket(socket);
+	close_socket(socket_id);
 
 	return 0;
 }
@@ -167,12 +234,10 @@ socket_t::~socket_t()
 	close();
 }
 
-int tcp_server_t::create(const std::string & ip, const int port)
+int tcp_server_t::create(const std::string & ip, const uint16_t port)
 {
-	assert(port >= 0);
-
 	//Create a socket
-	if ((socket = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
+	if ((server_id = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
 	{
 		int error_code = get_last_error();
 
@@ -185,7 +250,7 @@ int tcp_server_t::create(const std::string & ip, const int port)
 	ip_address.sin_port = htons(port);
 
 	//Bind
-	if (bind(socket, (sockaddr*)&ip_address, sizeof(ip_address)) == SOCKET_ERROR)
+	if (bind(server_id, (sockaddr*)&ip_address, sizeof(ip_address)) == SOCKET_ERROR)
 	{
 		int error_code = get_last_error();
 		close();
@@ -199,7 +264,7 @@ int tcp_server_t::create(const std::string & ip, const int port)
 int tcp_server_t::listen(socket_t & client_socket)
 {
 	//Listen
-	if (::listen(socket, 1) == SOCKET_ERROR)
+	if (::listen(server_id, 1) == SOCKET_ERROR)
 	{
 		int error_code = get_last_error();
 		close();
@@ -209,7 +274,7 @@ int tcp_server_t::listen(socket_t & client_socket)
 
 	//Accept
 	ADDRESS_LEN_T sizeof_client_address = sizeof(client_socket.mine_address);
-	if ((client_socket.socket = accept(socket, (sockaddr*)&client_socket.mine_address, &sizeof_client_address)) == INVALID_SOCKET)
+	if ((client_socket.socket_id = accept(server_id, (sockaddr*)&client_socket.mine_address, &sizeof_client_address)) == INVALID_SOCKET)
 	{
 		int error_code = get_last_error();
 		close();
@@ -222,9 +287,27 @@ int tcp_server_t::listen(socket_t & client_socket)
 	return 0;
 }
 
+std::string tcp_server_t::ip()
+{
+	sockaddr_in address;
+	ADDRESS_LEN_T address_len = sizeof(address);
+
+	getsockname(server_id, (sockaddr*)&address, &address_len);
+	return std::string(inet_ntoa(address.sin_addr));
+}
+
+uint16_t tcp_server_t::port()
+{
+	sockaddr_in address;
+	ADDRESS_LEN_T address_len = sizeof(address);
+
+	getsockname(server_id, (sockaddr*)&address, &address_len);
+	return htons(address.sin_port);
+}
+
 int tcp_server_t::close()
 {
-	close_socket(socket);
+	close_socket(server_id);
 
 	return 0;
 }

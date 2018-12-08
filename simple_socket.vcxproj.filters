@@ -19,6 +19,9 @@
     <Filter Include="Source Files\io">
       <UniqueIdentifier>{40ceb990-a1c4-435c-8c6f-424387905f98}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\sync">
+      <UniqueIdentifier>{d9b793c5-b9b1-4eb5-b509-1f8fd8c6dc07}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -37,6 +40,12 @@
     </ClInclude>
     <ClInclude Include="io\sockio.h">
       <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="sync\resettable_event.h">
+      <Filter>Header Files\sync</Filter>
+    </ClInclude>
+    <ClInclude Include="sync\spin_lock.h">
+      <Filter>Header Files\sync</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

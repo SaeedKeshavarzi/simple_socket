@@ -88,6 +88,8 @@
   <ItemGroup>
     <ClInclude Include="io\sockio.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="sync\resettable_event.h" />
+    <ClInclude Include="sync\spin_lock.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
