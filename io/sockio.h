@@ -19,11 +19,11 @@ public:
 	int recv(char * packet, const int size);
 	int recv_any(char * packet, const int capacity, int * recvd_size = nullptr);
 
-	std::string mine_ip();
-	uint16_t mine_port();
+	const std::string mine_ip() const;
+	const uint16_t mine_port() const;
 
-	std::string pair_ip();
-	uint16_t pair_port();
+	const std::string pair_ip() const;
+	const uint16_t pair_port() const;
 
 	int close();
 	~socket_t();
@@ -42,8 +42,8 @@ public:
 	int create(const std::string & ip = "", const uint16_t port = 0);
 	int listen(socket_t & client_socket);
 
-	std::string ip();
-	uint16_t port();
+	const std::string ip() const;
+	const uint16_t port() const;
 
 	int close();
 	~tcp_server_t();

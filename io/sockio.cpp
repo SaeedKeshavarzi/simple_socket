@@ -186,7 +186,7 @@ int socket_t::recv_any(char * packet, const int capacity, int * recvd_size)
 	return 0;
 }
 
-std::string socket_t::mine_ip()
+const std::string socket_t::mine_ip() const
 {
 	sockaddr_in address;
 	ADDRESS_LEN_T address_len = sizeof(address);
@@ -195,7 +195,7 @@ std::string socket_t::mine_ip()
 	return std::string(inet_ntoa(address.sin_addr));
 }
 
-uint16_t socket_t::mine_port()
+const uint16_t socket_t::mine_port() const
 {
 	sockaddr_in address;
 	ADDRESS_LEN_T address_len = sizeof(address);
@@ -204,7 +204,7 @@ uint16_t socket_t::mine_port()
 	return htons(address.sin_port);
 }
 
-std::string socket_t::pair_ip()
+const std::string socket_t::pair_ip() const
 {
 	sockaddr_in address;
 	ADDRESS_LEN_T address_len = sizeof(address);
@@ -213,7 +213,7 @@ std::string socket_t::pair_ip()
 	return std::string(inet_ntoa(address.sin_addr));
 }
 
-uint16_t socket_t::pair_port()
+const uint16_t socket_t::pair_port() const
 {
 	sockaddr_in address;
 	ADDRESS_LEN_T address_len = sizeof(address);
@@ -287,7 +287,7 @@ int tcp_server_t::listen(socket_t & client_socket)
 	return 0;
 }
 
-std::string tcp_server_t::ip()
+const std::string tcp_server_t::ip() const
 {
 	sockaddr_in address;
 	ADDRESS_LEN_T address_len = sizeof(address);
@@ -296,7 +296,7 @@ std::string tcp_server_t::ip()
 	return std::string(inet_ntoa(address.sin_addr));
 }
 
-uint16_t tcp_server_t::port()
+const uint16_t tcp_server_t::port() const
 {
 	sockaddr_in address;
 	ADDRESS_LEN_T address_len = sizeof(address);
