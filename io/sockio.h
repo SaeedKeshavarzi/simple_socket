@@ -1,6 +1,7 @@
 #ifndef _SOCKIO_H_
 #define _SOCKIO_H_
 
+#include <string>
 #include <stdint.h>
 
 enum class ip_protocol_t : int

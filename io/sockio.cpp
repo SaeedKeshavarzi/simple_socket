@@ -1,11 +1,32 @@
-#include "pch.h"
-#include "sockio.h"
+#include <cassert>
+#include <string>
 
 #ifdef __linux__
+
+#	include <netinet/in.h>
+#	include <arpa/inet.h>
+#	include <sys/socket.h>
+#	include <sys/types.h>
+#	include <unistd.h>
+#	include <errno.h>
+
+typedef int SOCKET;
+
+#	define INVALID_SOCKET   (SOCKET)(~0)
+#	define SOCKET_ERROR     (-1)
 #	define ADDRESS_LEN_T unsigned int
 #	define get_last_error() errno
 #	define close_socket(socket_id) ::close(socket_id)
+
 #else
+
+#	define _WINSOCK_DEPRECATED_NO_WARNINGS
+
+#	include <WinSock2.h>
+#	include <iphlpapi.h>
+#	pragma comment(lib, "IPHLPAPI.lib")
+#	pragma comment(lib, "ws2_32.lib")
+
 #	define ADDRESS_LEN_T int
 #	define get_last_error() WSAGetLastError()
 #	define close_socket(socket_id) ::closesocket(socket_id)
@@ -32,6 +53,8 @@ public:
 } static instance;
 
 #endif
+
+#include "sockio.h"
 
 int socket_t::connect(const std::string & mine_ip, const uint16_t mine_port, const std::string & pair_ip, const uint16_t pair_port, const ip_protocol_t protocol)
 {

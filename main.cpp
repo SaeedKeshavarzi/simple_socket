@@ -21,9 +21,8 @@ int main()
 	printf("press enter to stop... \n");
 
 	std::thread server_thread{ rx_server };
-	ready.wait();
 
-	printf("server port: %d \n", server_port);
+	ready.wait();
 	std::thread client_thread{ tx_client, server_port };
 
 	GET_CHAR();
