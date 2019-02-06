@@ -41,7 +41,7 @@ void rx_server()
 	char packet[PACKET_LEN];
 	int ret;
 
-	ret = tcp_server.create();
+	ret = tcp_server.create("127.0.0.1");
 	if (ret != 0)
 	{
 		printf("create server failed. error code: %d \n", ret);
@@ -67,7 +67,7 @@ void rx_server()
 			break;
 		}
 
-		printf("recv OK. \n");
+		printf("recv %d OK. \n\n", *(int*)&packet[0]);
 	}
 
 	keep_send = false;
@@ -80,17 +80,21 @@ void tx_client(uint16_t port)
 {
 	socket_t tcp_client;
 	char packet[PACKET_LEN];
+	int cnt;
 	int ret;
 
-	ret = tcp_client.connect("192.168.0.10", port, ip_protocol_t::tcp);
+	ret = tcp_client.connect("127.0.0.1", 0, "127.0.0.1", port, ip_protocol_t::tcp);
 	if (ret != 0)
 	{
 		printf("connect failed. error code: %d \n", ret);
 		return;
 	}
 
+	cnt = 0;
+
 	while (keep_send)
 	{
+		*(int*)&packet[0] = cnt;
 		ret = tcp_client.send(packet, PACKET_LEN);
 		if (ret != 0)
 		{
@@ -98,7 +102,9 @@ void tx_client(uint16_t port)
 			break;
 		}
 
-		printf("send OK. \n");
+		printf("send %d OK. \n", cnt);
+		++cnt;
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(450));
 	}
 
