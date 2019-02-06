@@ -1,6 +1,10 @@
 #ifndef _PCH_H_
 #define _PCH_H_
 
+#ifdef _MSC_VER
+#   define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <map>
 #include <set>
 #include <list>
@@ -8,18 +12,23 @@
 #include <stack>
 #include <deque>
 #include <ctime>
+#include <mutex>
 #include <bitset>
 #define _USE_MATH_DEFINES
-#include <cmath>
+#include <math.h>
+#include <array>
 #include <vector>
 #include <thread>
+#include <atomic>
 #include <cctype>
+#include <string>
 #include <cstdlib>
-#include <sstream>
 #include <cassert>
 #include <utility>
 #include <complex>
 #include <stdio.h>
+#include <sstream>
+#include <fstream>
 #include <string.h>
 #include <memory.h>
 #include <iostream>
@@ -61,6 +70,8 @@ typedef int SOCKET;
 					} \
 					auto __startup_time__{ std::chrono::high_resolution_clock::now() }; \
 
+#define FLUSH_OUT()	do { char ch; while (std::cin.readsome(&ch, 1) != 0); } while (0)
+
 #define GET_CHAR()	do { char ch; while (std::cin.readsome(&ch, 1) != 0); getchar(); } while (0)
 
 #define FINISH(n)	{ \
@@ -72,16 +83,16 @@ typedef int SOCKET;
 					GET_CHAR(); \
 					return n
 
-#define For(i, n)			for( int (i) = 0; (i) < (n); ++(i) )
-#define Forn(i, a, b)		for( int (i) = (a); (i) < (b); ++(i) )
-#define Fors(i, b, s)		for( int (i) = 0; (i) < (b); (i) += (s) )
-#define Forns(i, a, b, s)	for( int (i) = (a); (i) < (b); (i) += (s) )
+#define For(i, n)			for( std::remove_cv<std::remove_reference<decltype(n)>::type>::type (i) = (decltype(i))0; (i) < (n); ++(i) )
+#define Forn(i, a, b)		for( std::remove_cv<std::remove_reference<decltype(a)>::type>::type (i) = (a); (i) < (b); ++(i) )
+#define Fors(i, b, s)		for( std::remove_cv<std::remove_reference<decltype(b)>::type>::type (i) = (decltype(i))0; (i) < (b); (i) += (s) )
+#define Forns(i, a, b, s)	for( std::remove_cv<std::remove_reference<decltype(a)>::type>::type (i) = (a); (i) < (b); (i) += (s) )
 #define SET(t, v)			memset((t), (v), sizeof(t))
 
 #define MAX(x, y)		((x) > (y) ? (x) : (y))
 #define MIN(x, y)		((x) < (y) ? (x) : (y))
 
-#define FP_EPSILON			1e-8
+#define FP_EPSILON			1e-9
 #define FP_EQUAL(x, y)		(((x) > (y) ? (x) - (y) : (y) - (x)) < FP_EPSILON)
 #define FP_EQUAL_ZERO(x)	((x) > 0. ? (x) < FP_EPSILON : -FP_EPSILON < (x))
 #define FP_GREATER_OR_EQUAL	(x, y)	((x) > (y) - FP_EPSILON)
@@ -95,6 +106,5 @@ typedef signed long long	int64;	// -9e18 to 9e18  // (-9223372036854775808) - (9
 typedef unsigned long long	uint64;	// 0     to 18e18 // (0)                    - (18446744073709551615) // %I64u	// auto n = 1llu;	// unsigned long long
 typedef std::vector<int>	VI;
 typedef std::pair<int, int>	PII;
-const double EPS(1E-9);
 
 #endif // !_PCH_H_
