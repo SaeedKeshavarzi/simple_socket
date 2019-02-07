@@ -6,24 +6,47 @@
 #define PACKET_LEN (1500)
 
 manual_reset_event ready{ false };
-uint16_t server_port{ 0 };
+uint16_t receiver_port{ 0 };
+ip_protocol_t protocol{ ip_protocol_t::tcp };
 
 bool keep_recv{ true };
 bool keep_send{ true };
 
-void rx_server();
-void tx_client(uint16_t port);
+void rx_tcp_server();
+void rx_udp_receiver();
+void tx_transmitter(uint16_t port);
 
 int main()
 {
 	INIT();
 
+	do
+	{
+		int t;
+
+		printf("Protocol(0: TCP, 1:UDP)? ");
+		scanf("%d", &t);
+		if ((t == 0) || (t == 1))
+		{
+			protocol = (t == 0 ? ip_protocol_t::tcp : ip_protocol_t::udp);
+			break;
+		}
+	} while (true);
+
 	printf("press enter to stop... \n");
 
-	std::thread server_thread{ rx_server };
+	std::thread server_thread;
+	if (protocol == ip_protocol_t::tcp)
+	{
+		server_thread = std::thread{ rx_tcp_server };
+	}
+	else // UDP
+	{
+		server_thread = std::thread{ rx_udp_receiver };
+	}
 
 	ready.wait();
-	std::thread client_thread{ tx_client, server_port };
+	std::thread client_thread{ tx_transmitter, receiver_port };
 
 	GET_CHAR();
 	keep_recv = false;
@@ -34,7 +57,7 @@ int main()
 	FINISH(0);
 }
 
-void rx_server()
+void rx_tcp_server()
 {
 	tcp_server_t tcp_server;
 	socket_t socket;
@@ -48,7 +71,7 @@ void rx_server()
 		return;
 	}
 
-	server_port = tcp_server.port();
+	receiver_port = tcp_server.port();
 	ready.set();
 
 	ret = tcp_server.listen(socket);
@@ -67,7 +90,7 @@ void rx_server()
 			break;
 		}
 
-		printf("recv %d OK. \n\n", *(int*)&packet[0]);
+		printf("recv %d OK. \n", *(int*)&packet[0]);
 	}
 
 	keep_send = false;
@@ -76,14 +99,54 @@ void rx_server()
 	tcp_server.close();
 }
 
-void tx_client(uint16_t port)
+void rx_udp_receiver()
 {
-	socket_t tcp_client;
+	socket_t socket;
+	char packet[PACKET_LEN];
+	int ret;
+
+	ret = socket.create(ip_protocol_t::udp, "127.0.0.1");
+	if (ret != 0)
+	{
+		printf("create server failed. error code: %d \n", ret);
+		return;
+	}
+
+	receiver_port = socket.mine_port();
+	ready.set();
+
+	while (keep_recv)
+	{
+		ret = socket.recv(packet, PACKET_LEN);
+		if (ret != 0)
+		{
+			printf("recv failed. error code: %d \n", ret);
+			break;
+		}
+
+		printf("recv %d OK. \n", *(int*)&packet[0]);
+	}
+
+	keep_send = false;
+
+	socket.close();
+}
+
+void tx_transmitter(uint16_t port)
+{
+	socket_t transmitter;
 	char packet[PACKET_LEN];
 	int cnt;
 	int ret;
 
-	ret = tcp_client.connect("127.0.0.1", 0, "127.0.0.1", port, ip_protocol_t::tcp);
+	ret = transmitter.create(protocol);
+	if (ret != 0)
+	{
+		printf("create failed. error code: %d \n", ret);
+		return;
+	}
+
+	ret = transmitter.connect("127.0.0.1", port);
 	if (ret != 0)
 	{
 		printf("connect failed. error code: %d \n", ret);
@@ -95,7 +158,7 @@ void tx_client(uint16_t port)
 	while (keep_send)
 	{
 		*(int*)&packet[0] = cnt;
-		ret = tcp_client.send(packet, PACKET_LEN);
+		ret = transmitter.send(packet, PACKET_LEN);
 		if (ret != 0)
 		{
 			printf("send failed. error code: %d \n", ret);
@@ -108,5 +171,5 @@ void tx_client(uint16_t port)
 		std::this_thread::sleep_for(std::chrono::milliseconds(450));
 	}
 
-	tcp_client.close();
+	transmitter.close();
 }
