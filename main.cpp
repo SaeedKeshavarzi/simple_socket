@@ -5,16 +5,15 @@
 
 #define PACKET_LEN (1500)
 
-manual_reset_event ready{ false };
-uint16_t receiver_port{ 0 };
+manual_reset_event ready{ false }, finished{ false };
+uint16_t rx_port{ 0 };
 ip_protocol_t protocol{ ip_protocol_t::tcp };
 
-bool keep_recv{ true };
-bool keep_send{ true };
+tcp_server_t server;
+socket_t transmitter, receiver;
 
-void rx_tcp_server();
-void rx_udp_receiver();
-void tx_transmitter(uint16_t port);
+void rx();
+void tx(uint16_t port);
 
 int main()
 {
@@ -26,115 +25,102 @@ int main()
 
 		printf("Protocol(0: TCP, 1:UDP)? ");
 		scanf("%d", &t);
-		if ((t == 0) || (t == 1))
+		if (t == 0)
 		{
-			protocol = (t == 0 ? ip_protocol_t::tcp : ip_protocol_t::udp);
+			protocol = ip_protocol_t::tcp;
+			break;
+		}
+		else if (t == 1)
+		{
+			protocol = ip_protocol_t::udp;
 			break;
 		}
 	} while (true);
 
-	printf("press enter to stop... \n");
+	std::thread rx_thread{ rx };
+	ready.wait();
+	std::thread tx_thread{ tx, rx_port };
 
-	std::thread server_thread;
+	printf("press enter to stop... \n");
+	FLUSH_OUT();
+	GET_CHAR();
+
+	finished.set();
+
 	if (protocol == ip_protocol_t::tcp)
 	{
-		server_thread = std::thread{ rx_tcp_server };
+		server.close();
 	}
-	else // UDP
-	{
-		server_thread = std::thread{ rx_udp_receiver };
-	}
+	transmitter.close();
+	receiver.close();
 
-	ready.wait();
-	std::thread client_thread{ tx_transmitter, receiver_port };
-
-	GET_CHAR();
-	keep_recv = false;
-
-	server_thread.join();
-	client_thread.join();
+	tx_thread.join();
+	rx_thread.join();
 
 	FINISH(0);
 }
 
-void rx_tcp_server()
+void rx()
 {
-	tcp_server_t tcp_server;
-	socket_t socket;
 	char packet[PACKET_LEN];
 	int ret;
 
-	ret = tcp_server.create("127.0.0.1");
-	if (ret != 0)
+	if (protocol == ip_protocol_t::tcp)
 	{
-		printf("create server failed. error code: %d \n", ret);
-		return;
-	}
-
-	receiver_port = tcp_server.port();
-	ready.set();
-
-	ret = tcp_server.listen(socket);
-	if (ret != 0)
-	{
-		printf("listen failed. error code: %d \n", ret);
-		return;
-	}
-
-	while (keep_recv)
-	{
-		ret = socket.recv(packet, PACKET_LEN);
+		ret = server.create("127.0.0.1");
 		if (ret != 0)
 		{
-			printf("recv failed. error code: %d \n", ret);
+			printf("create server failed. error code: %d \n", ret);
+			return;
+		}
+
+		rx_port = server.port();
+		ready.set();
+
+		ret = server.listen(receiver);
+		if (ret != 0)
+		{
+			if (!finished.is_set())
+			{
+				printf("listen failed. error code: %d \n", ret);
+			}
+			return;
+		}
+	}
+	else
+	{
+		ret = receiver.create(ip_protocol_t::udp, "127.0.0.1");
+		if (ret != 0)
+		{
+			printf("create server failed. error code: %d \n", ret);
+			return;
+		}
+
+		rx_port = receiver.mine_port();
+		ready.set();
+	}
+	
+
+	while (!finished.is_set())
+	{
+		ret = receiver.recv(packet, PACKET_LEN);
+		if (ret != 0)
+		{
+			if (!finished.is_set())
+			{
+				printf("recv failed. error code: %d \n", ret);
+			}
 			break;
 		}
 
 		printf("recv %d OK. \n", *(int*)&packet[0]);
 	}
 
-	keep_send = false;
-
-	socket.close();
-	tcp_server.close();
+	printf("rx closed. \n");
 }
 
-void rx_udp_receiver()
+void tx(uint16_t port)
 {
-	socket_t socket;
-	char packet[PACKET_LEN];
-	int ret;
-
-	ret = socket.create(ip_protocol_t::udp, "127.0.0.1");
-	if (ret != 0)
-	{
-		printf("create server failed. error code: %d \n", ret);
-		return;
-	}
-
-	receiver_port = socket.mine_port();
-	ready.set();
-
-	while (keep_recv)
-	{
-		ret = socket.recv(packet, PACKET_LEN);
-		if (ret != 0)
-		{
-			printf("recv failed. error code: %d \n", ret);
-			break;
-		}
-
-		printf("recv %d OK. \n", *(int*)&packet[0]);
-	}
-
-	keep_send = false;
-
-	socket.close();
-}
-
-void tx_transmitter(uint16_t port)
-{
-	socket_t transmitter;
 	char packet[PACKET_LEN];
 	int cnt;
 	int ret;
@@ -155,8 +141,10 @@ void tx_transmitter(uint16_t port)
 
 	cnt = 0;
 
-	while (keep_send)
+	while (!finished.wait_for(std::chrono::milliseconds(1500)))
 	{
+		printf("\n");
+
 		*(int*)&packet[0] = cnt;
 		ret = transmitter.send(packet, PACKET_LEN);
 		if (ret != 0)
@@ -167,9 +155,7 @@ void tx_transmitter(uint16_t port)
 
 		printf("send %d OK. \n", cnt);
 		++cnt;
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(450));
 	}
 
-	transmitter.close();
+	printf("tx closed. \n");
 }
