@@ -419,45 +419,45 @@ std::vector<adapter_info_t> ip_helper::get_adapters_info()
 	try
 	{
 #ifdef __linux__
-		struct ifaddrs * ifaddr, *ifa;
-		int family, s;
-		char host[NI_MAXHOST];
+		//struct ifaddrs * ifaddr, *ifa;
+		//int family, s;
+		//char host[NI_MAXHOST];
 
-		if (getifaddrs(&ifaddr) == -1)
-		{
-			throw new std::exception("getifaddrs failed.");
-		}
+		//if (getifaddrs(&ifaddr) == -1)
+		//{
+		//	throw new std::exception("getifaddrs failed.");
+		//}
 
-		/* Walk through linked list, maintaining head pointer so we
-		can free list later */
+		///* Walk through linked list, maintaining head pointer so we
+		//can free list later */
 
-		for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
-		{
-			if (ifa->ifa_addr == nullptr)
-			{
-				continue;
-			}
+		//for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
+		//{
+		//	if (ifa->ifa_addr == nullptr)
+		//	{
+		//		continue;
+		//	}
 
-			/* For an AF_INET* interface address, display the address */
-			family = ifa->ifa_addr->sa_family;
-			if (family == AF_INET || family == AF_INET6)
-			{
-				s = getnameinfo(ifa->ifa_addr,
-					(family == AF_INET) ? sizeof(struct sockaddr_in) :
-					sizeof(struct sockaddr_in6),
-					host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+		//	/* For an AF_INET* interface address, display the address */
+		//	family = ifa->ifa_addr->sa_family;
+		//	if (family == AF_INET || family == AF_INET6)
+		//	{
+		//		s = getnameinfo(ifa->ifa_addr,
+		//			(family == AF_INET) ? sizeof(struct sockaddr_in) :
+		//			sizeof(struct sockaddr_in6),
+		//			host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
 
-				if (s != 0)
-				{
-					std::string exception_msg = "getnameinfo() failed: " + gai_strerror(s) + ".";
-					throw new std::exception(exception_msg.c_str());
-				}
+		//		if (s != 0)
+		//		{
+		//			std::string exception_msg = "getnameinfo() failed: " + gai_strerror(s) + ".";
+		//			throw new std::exception(exception_msg.c_str());
+		//		}
 
-				printf("\taddress: <%s>\n", host);
-			}
-		}
+		//		printf("\taddress: <%s>\n", host);
+		//	}
+		//}
 
-		freeifaddrs(ifaddr);
+		//freeifaddrs(ifaddr);
 #else
 		PIP_ADAPTER_INFO pAdapterInfo;
 		PIP_ADAPTER_INFO pAdapter = NULL;
