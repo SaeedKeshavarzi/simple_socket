@@ -1,11 +1,14 @@
 #include <cassert>
-#include <string>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __linux__
 
 #	include <netinet/in.h>
 #	include <arpa/inet.h>
 #	include <sys/socket.h>
+#	include <ifaddrs.h>
+#	include <netdb.h>
 #	include <sys/types.h>
 #	include <unistd.h>
 #	include <errno.h>
@@ -408,3 +411,131 @@ tcp_server_t::~tcp_server_t()
 {
 	close();
 }
+
+std::vector<adapter_info_t> ip_helper::get_adapters_info()
+{
+	std::vector<adapter_info_t> adapters_list;
+
+	try
+	{
+#ifdef __linux__
+		struct ifaddrs * ifaddr, *ifa;
+		int family, s;
+		char host[NI_MAXHOST];
+
+		if (getifaddrs(&ifaddr) == -1)
+		{
+			throw new std::exception("getifaddrs failed.");
+		}
+
+		/* Walk through linked list, maintaining head pointer so we
+		can free list later */
+
+		for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next)
+		{
+			if (ifa->ifa_addr == nullptr)
+			{
+				continue;
+			}
+
+			/* For an AF_INET* interface address, display the address */
+			family = ifa->ifa_addr->sa_family;
+			if (family == AF_INET || family == AF_INET6)
+			{
+				s = getnameinfo(ifa->ifa_addr,
+					(family == AF_INET) ? sizeof(struct sockaddr_in) :
+					sizeof(struct sockaddr_in6),
+					host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+				if (s != 0)
+				{
+					std::string exception_msg = "getnameinfo() failed: " + gai_strerror(s) + ".";
+					throw new std::exception(exception_msg.c_str());
+				}
+
+				printf("\taddress: <%s>\n", host);
+			}
+		}
+
+		freeifaddrs(ifaddr);
+#else
+		PIP_ADAPTER_INFO pAdapterInfo;
+		PIP_ADAPTER_INFO pAdapter = NULL;
+		DWORD dwRetVal = 0;
+		UINT i;
+
+		/* variables used to print DHCP time info */
+		struct tm newtime;
+		char buffer[32];
+		errno_t error;
+
+		ULONG ulOutBufLen = sizeof(IP_ADAPTER_INFO);
+		pAdapterInfo = (IP_ADAPTER_INFO *)HeapAlloc(GetProcessHeap(), 0, sizeof(IP_ADAPTER_INFO));
+		if (pAdapterInfo == NULL)
+		{
+			throw new std::exception("Error allocating memory needed to call GetAdaptersinfo.");
+		}
+
+		// Make an initial call to GetAdaptersInfo to get
+		// the necessary size into the ulOutBufLen variable
+		if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == ERROR_BUFFER_OVERFLOW)
+		{
+			HeapFree(GetProcessHeap(), 0, pAdapterInfo);
+			pAdapterInfo = (IP_ADAPTER_INFO *)HeapAlloc(GetProcessHeap(), 0, ulOutBufLen);
+			if (pAdapterInfo == NULL)
+			{
+				throw new std::exception("Error allocating memory needed to call GetAdaptersinfo.");
+			}
+		}
+
+		if ((dwRetVal = GetAdaptersInfo(pAdapterInfo, &ulOutBufLen)) == NO_ERROR)
+		{
+			char * buf = new char[100];
+
+			for (pAdapter = pAdapterInfo; pAdapter != nullptr; pAdapter = pAdapter->Next)
+			{
+				adapter_info_t adapter_info;
+
+				buf[0] = '\0';
+				for (i = 0; i < pAdapter->AddressLength; ++i)
+				{
+					if (i == (pAdapter->AddressLength - 1))
+					{
+						sprintf(buf + strlen(buf), "%.2X", (int)pAdapter->Address[i]);
+					}
+					else
+					{
+						sprintf(buf + strlen(buf), "%.2X-", (int)pAdapter->Address[i]);
+					}
+				}
+
+				adapter_info.mac_address = buf;
+				adapter_info.name = pAdapter->Description;
+				adapter_info.ip_address = pAdapter->IpAddressList.IpAddress.String;
+				adapter_info.ip_mask = pAdapter->IpAddressList.IpMask.String;
+
+				adapters_list.push_back(adapter_info);
+			}
+
+			delete[] buf;
+		}
+		else
+		{
+			std::string exception_msg = "GetAdaptersInfo failed with error: " + std::to_string(dwRetVal) + ".";
+			throw new std::exception(exception_msg.c_str());
+		}
+
+		if (pAdapterInfo)
+		{
+			HeapFree(GetProcessHeap(), 0, pAdapterInfo);
+		}
+#endif // __linux__
+	}
+	catch (const std::exception & ex)
+	{
+
+	}
+
+	return adapters_list;
+}
+
