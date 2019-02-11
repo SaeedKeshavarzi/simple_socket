@@ -2,12 +2,21 @@
 #define _SOCKIO_H_
 
 #include <string>
+#include <vector>
 #include <stdint.h>
 
 enum class ip_protocol_t : int
 {
 	tcp = IPPROTO_TCP,
 	udp = IPPROTO_UDP
+};
+
+struct adapter_info_t
+{
+	std::string name;
+	std::string mac_address;
+	std::string ip_address;
+	std::string ip_mask;
 };
 
 class socket_t
@@ -52,6 +61,14 @@ public:
 
 private:
 	SOCKET server_id;
+};
+
+class ip_helper
+{
+public:
+	ip_helper() = delete;
+
+	static std::vector<adapter_info_t> get_adapters_info();
 };
 
 #endif // !_SOCKIO_H_
