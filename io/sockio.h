@@ -5,6 +5,19 @@
 #include <vector>
 #include <stdint.h>
 
+#ifdef __linux__
+
+#	include <arpa/inet.h>
+
+typedef int SOCKET;
+
+#else
+
+#	define _WINSOCK_DEPRECATED_NO_WARNINGS
+#	include <WinSock2.h>
+
+#endif
+
 enum class ip_protocol_t : int
 {
 	tcp = IPPROTO_TCP,
@@ -43,7 +56,7 @@ public:
 	~socket_t();
 
 private:
-	SOCKET socket_id;
+	SOCKET socket_id{ (SOCKET)0 };
 	friend class tcp_server_t;
 };
 
@@ -60,7 +73,7 @@ public:
 	~tcp_server_t();
 
 private:
-	SOCKET server_id;
+	SOCKET server_id{ (SOCKET)0 };
 };
 
 class ip_helper

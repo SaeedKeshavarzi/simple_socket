@@ -6,18 +6,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "sockio.h"
+
 #ifdef __linux__
 
 #	include <netinet/in.h>
-#	include <arpa/inet.h>
 #	include <sys/socket.h>
 #	include <ifaddrs.h>
 #	include <netdb.h>
 #	include <sys/types.h>
 #	include <unistd.h>
 #	include <errno.h>
-
-typedef int SOCKET;
 
 #	define INVALID_SOCKET   (SOCKET)(~0)
 #	define SOCKET_ERROR     (-1)
@@ -27,9 +26,6 @@ typedef int SOCKET;
 
 #else
 
-#	define _WINSOCK_DEPRECATED_NO_WARNINGS
-
-#	include <WinSock2.h>
 #	include <iphlpapi.h>
 #	pragma comment(lib, "IPHLPAPI.lib")
 #	pragma comment(lib, "ws2_32.lib")
@@ -60,8 +56,6 @@ public:
 } static instance;
 
 #endif
-
-#include "sockio.h"
 
 int socket_t::create(const ip_protocol_t protocol, const std::string & ip, const uint16_t port)
 {
@@ -323,7 +317,11 @@ uint16_t socket_t::pair_port() const
 
 int socket_t::close()
 {
-	close_socket(socket_id);
+	if (socket_id != (SOCKET)0)
+	{
+		close_socket(socket_id);
+		socket_id = (SOCKET)0;
+	}
 
 	return 0;
 }
@@ -406,7 +404,11 @@ uint16_t tcp_server_t::port() const
 
 int tcp_server_t::close()
 {
-	close_socket(server_id);
+	if (server_id != (SOCKET)0)
+	{
+		close_socket(server_id);
+		server_id = (SOCKET)0;
+	}
 
 	return 0;
 }

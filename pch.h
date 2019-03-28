@@ -35,32 +35,6 @@
 #include <algorithm>
 #include <experimental/filesystem>
 
-#ifdef __linux__
-
-#	include <netinet/in.h>
-#	include <arpa/inet.h>
-#	include <sys/socket.h>
-#	include <sys/types.h>
-#	include <unistd.h>
-#	include <errno.h>
-
-typedef int SOCKET;
-
-#	define INVALID_SOCKET   (SOCKET)(~0)
-#	define SOCKET_ERROR     (-1)
-
-#else
-
-#	define _WINSOCK_DEPRECATED_NO_WARNINGS
-
-#	include <WinSock2.h>
-#	include <iphlpapi.h>
-#	pragma comment(lib, "IPHLPAPI.lib")
-#	pragma comment(lib, "ws2_32.lib")
-
-#endif
-
-
 #define INIT()		std::ios::sync_with_stdio(false); \
 					std::cin.tie(NULL); \
 					{ \
