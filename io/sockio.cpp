@@ -5,6 +5,7 @@
 #include <cassert>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdexcept>
 
 #include "sockio.h"
 
@@ -26,7 +27,7 @@
 
 #else
 
-#	include <iphlpapi.h>
+#	include <IPHlpApi.h>
 #	pragma comment(lib, "IPHLPAPI.lib")
 #	pragma comment(lib, "ws2_32.lib")
 
@@ -45,6 +46,7 @@ public:
 		if (ret != 0)
 		{
 			int error_code = get_last_error();
+            (void)error_code;
 			assert(ret != 0);
 		}
 	}
@@ -431,7 +433,7 @@ std::vector<adapter_info_t> ip_helper::get_adapters_info()
 
 		//if (getifaddrs(&ifaddr) == -1)
 		//{
-		//	throw new std::exception("getifaddrs failed.");
+		//	throw new std::runtime_error("getifaddrs failed.");
 		//}
 
 		///* Walk through linked list, maintaining head pointer so we
@@ -455,8 +457,8 @@ std::vector<adapter_info_t> ip_helper::get_adapters_info()
 
 		//		if (s != 0)
 		//		{
-		//			std::string exception_msg = "getnameinfo() failed: " + gai_strerror(s) + ".";
-		//			throw new std::exception(exception_msg.c_str());
+		//			std::string exception_msg = std::string("getnameinfo() failed: ") + gai_strerror(s) + ".";
+		//			throw new std::runtime_error(exception_msg.c_str());
 		//		}
 
 		//		printf("\taddress: <%s>\n", host);
@@ -466,20 +468,15 @@ std::vector<adapter_info_t> ip_helper::get_adapters_info()
 		//freeifaddrs(ifaddr);
 #else
 		PIP_ADAPTER_INFO pAdapterInfo;
-		PIP_ADAPTER_INFO pAdapter = NULL;
+        PIP_ADAPTER_INFO pAdapter = nullptr;
 		DWORD dwRetVal = 0;
 		UINT i;
 
-		/* variables used to print DHCP time info */
-		struct tm newtime;
-		char buffer[32];
-		errno_t error;
-
 		ULONG ulOutBufLen = sizeof(IP_ADAPTER_INFO);
 		pAdapterInfo = (IP_ADAPTER_INFO *)HeapAlloc(GetProcessHeap(), 0, sizeof(IP_ADAPTER_INFO));
-		if (pAdapterInfo == NULL)
+		if (pAdapterInfo == nullptr)
 		{
-			throw new std::exception("Error allocating memory needed to call GetAdaptersinfo.");
+			throw new std::runtime_error("Error allocating memory needed to call GetAdaptersinfo.");
 		}
 
 		// Make an initial call to GetAdaptersInfo to get
@@ -488,9 +485,9 @@ std::vector<adapter_info_t> ip_helper::get_adapters_info()
 		{
 			HeapFree(GetProcessHeap(), 0, pAdapterInfo);
 			pAdapterInfo = (IP_ADAPTER_INFO *)HeapAlloc(GetProcessHeap(), 0, ulOutBufLen);
-			if (pAdapterInfo == NULL)
+			if (pAdapterInfo == nullptr)
 			{
-				throw new std::exception("Error allocating memory needed to call GetAdaptersinfo.");
+				throw new std::runtime_error("Error allocating memory needed to call GetAdaptersinfo.");
 			}
 		}
 
@@ -527,8 +524,8 @@ std::vector<adapter_info_t> ip_helper::get_adapters_info()
 		}
 		else
 		{
-			std::string exception_msg = "GetAdaptersInfo failed with error: " + std::to_string(dwRetVal) + ".";
-			throw new std::exception(exception_msg.c_str());
+			std::string exception_msg = std::string("GetAdaptersInfo failed with error: ") + std::to_string(dwRetVal) + ".";
+			throw new std::runtime_error(exception_msg.c_str());
 		}
 
 		if (pAdapterInfo)
@@ -537,7 +534,7 @@ std::vector<adapter_info_t> ip_helper::get_adapters_info()
 		}
 #endif // __linux__
 	}
-	catch (const std::exception & ex)
+    catch (const std::exception&)
 	{
 
 	}

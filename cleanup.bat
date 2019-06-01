@@ -22,6 +22,10 @@ IF EXIST ".\Debug" (
     rmdir ".\Debug" /s /q
 )
 
+IF EXIST ".\Release" (
+    rmdir ".\Release" /s /q
+)
+
 del *.pro.user
 
 del *.vcxproj.user
