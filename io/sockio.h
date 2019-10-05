@@ -64,7 +64,7 @@ class tcp_server_t
 {
 public:
 	int create(const std::string & ip = "", const uint16_t port = 0);
-	int listen(socket_t & client_socket);
+	int listen(socket_t & client_socket, const int backlog = 1);
 
 	std::string ip() const;
 	uint16_t port() const;

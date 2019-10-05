@@ -5,7 +5,7 @@
 
 #define PACKET_LEN (1500)
 
-manual_reset_event ready{ false }, finished{ false };
+resettable_event<false> ready{ false }, finished{ false };
 uint16_t rx_port{ 0 };
 ip_protocol_t protocol{ ip_protocol_t::tcp };
 

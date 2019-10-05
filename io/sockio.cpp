@@ -361,10 +361,10 @@ int tcp_server_t::create(const std::string & ip, const uint16_t port)
 	return 0;
 }
 
-int tcp_server_t::listen(socket_t & client_socket)
+int tcp_server_t::listen(socket_t & client_socket, const int backlog)
 {
 	//Listen
-	if (::listen(server_id, 1) == SOCKET_ERROR)
+	if (::listen(server_id, backlog) == SOCKET_ERROR)
 	{
 		int error_code = get_last_error();
 		close();
