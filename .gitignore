@@ -32,12 +32,20 @@
 *.app
 
 # Visual Studio
+/.vs/
+/.sou/
 /bin/
 /obj/
-/.vs/
+/x64/
+/debug/
+/release/
 /ipch/
 *.db
 *.opendb
+*.TMP
 
 # Qt
 *.pro.user
+
+# Simple Socket Log File
+/SimpleSocket.log
